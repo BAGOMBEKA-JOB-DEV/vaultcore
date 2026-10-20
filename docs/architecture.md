@@ -96,7 +96,11 @@ operations and replay, restarts replicas, pauses/restores the database, deploys 
 missing image, inspects events, rolls back, and verifies persisted state again.
 It checks the kind-vaultcore context and uses private test authentication.
 
-Useful diagnostic commands:
+The complete project command reference, including manual API calls, deployment,
+scaling, failure drills, storage behaviour, and cleanup, is in the
+[README](../README.md#command-reference).
+
+Common diagnostic commands:
 
 ```bash
 kubectl get pods -o wide
