@@ -42,8 +42,19 @@ stop_forward() {
     wait "$forward_pid" 2>/dev/null || true
     forward_pid=""
 }
-mapfile -t api_pods < <(kubectl get pods -l app=vaultcore -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
-[[ ${#api_pods[@]} -eq 2 ]]
+mapfile -t api_pods < <(kubectl get pods -l app=vaultcore -o json | python3 -c '
+import json, sys
+for pod in json.load(sys.stdin)["items"]:
+    ready = any(condition["type"] == "Ready" and condition["status"] == "True"
+                for condition in pod.get("status", {}).get("conditions", []))
+    if ready and not pod["metadata"].get("deletionTimestamp"):
+        print(pod["metadata"]["name"])
+')
+if [[ ${#api_pods[@]} -ne 2 ]]; then
+    kubectl get pods -l app=vaultcore
+    printf 'Expected two ready, non-terminating API replicas.\n' >&2
+    exit 1
+fi
 start_forward "pod/${api_pods[0]}"
 python3 scripts/demo.py --base-url http://127.0.0.1:18080 --state "$exercise_dir/state.json"
 stop_forward
