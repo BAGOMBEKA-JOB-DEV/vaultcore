@@ -24,6 +24,8 @@ jobs:
           java-version: "21"
           cache: maven
       - name: Verify with PostgreSQL integration tests
+        env:
+          MAVEN_OPTS: -Xmx512m -XX:MaxMetaspaceSize=384m
         run: ./mvnw --batch-mode -Pintegration verify
       - name: Build container image
         run: docker build --tag vaultcore:ci .

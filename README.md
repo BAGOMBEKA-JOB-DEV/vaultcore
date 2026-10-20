@@ -51,9 +51,13 @@ Choose a verification mode; do not run builds concurrently:
 ./scripts/mvn.sh verify                 # fast unit/API security tests, no services
 ./scripts/test-postgres.sh              # full suite with one temporary native PostgreSQL
 # OR, on a Docker-capable machine:
-./scripts/mvn.sh -Pintegration verify   # same integration suite with Testcontainers/PostgreSQL 17
+MAVEN_OPTS='-XX:MaxMetaspaceSize=384m' ./scripts/mvn.sh -Pintegration verify
+# same integration suite with Testcontainers/PostgreSQL 17
 ```
 
+The Docker variant needs additional class-metadata space for Testcontainers;
+use it on a machine with room for both the JVM and Docker. CI uses a 512 MB heap
+and 384 MB metadata budget, while local defaults remain capped as described below.
 The native test runner uses a fresh port and database and removes it on exit.
 It never uses the system database or local practice data. Local verification
 used PostgreSQL 16; containers and CI use PostgreSQL 17. CI also builds the image
