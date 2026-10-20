@@ -1,0 +1,8 @@
+{
+  "java.autobuild.enabled": false,
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.jdt.ls.vmargs": "-Xms64m -Xmx256m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -XX:ActiveProcessorCount=1",
+  "files.watcherExclude": {
+    "**/target/**": true
+  }
+}

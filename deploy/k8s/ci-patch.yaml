@@ -1,0 +1,26 @@
+# Private, disposable CI cluster only. Enables deliberately permissive demo authentication.
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev
+            - name: SERVER_ADDRESS
+              value: 0.0.0.0
+            - name: VAULTCORE_DEV_KEY_FILE
+              value: /var/run/vaultcore-dev/private-key.pem
+          volumeMounts:
+            - name: dev-key
+              mountPath: /var/run/vaultcore-dev
+              readOnly: true
+      volumes:
+        - name: dev-key
+          secret:
+            secretName: vaultcore-dev-key

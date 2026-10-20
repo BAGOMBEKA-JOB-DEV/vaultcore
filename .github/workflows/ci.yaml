@@ -1,0 +1,55 @@
+name: Verify
+
+on:
+  push:
+    branches: [main, "setup/**", "feature/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Verify with PostgreSQL integration tests
+        run: ./mvnw --batch-mode -Pintegration verify
+      - name: Build container image
+        run: docker build --tag vaultcore:ci .
+      - name: Install verified Kubernetes CLIs
+        shell: bash
+        run: |
+          curl -fsSL https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 -o /tmp/kind-linux-amd64
+          curl -fsSL https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64.sha256sum -o /tmp/kind.sha256sum
+          (cd /tmp && sha256sum -c kind.sha256sum)
+          sudo install -m 755 /tmp/kind-linux-amd64 /usr/local/bin/kind
+          curl -fsSL https://dl.k8s.io/release/v1.37.1/bin/linux/amd64/kubectl -o /tmp/kubectl
+          curl -fsSL https://dl.k8s.io/release/v1.37.1/bin/linux/amd64/kubectl.sha256 -o /tmp/kubectl.sha256
+          printf '%s  /tmp/kubectl\n' "$(cat /tmp/kubectl.sha256)" | sha256sum -c
+          sudo install -m 755 /tmp/kubectl /usr/local/bin/kubectl
+      - name: Exercise Kubernetes deployment and recovery
+        run: |
+          docker tag vaultcore:ci vaultcore:dev
+          kind create cluster --name vaultcore --config deploy/kind.yaml --wait 120s
+          kind load docker-image vaultcore:dev --name vaultcore
+          ./scripts/k8s-smoke.sh
+      - name: Collect failure diagnostics
+        if: failure()
+        run: |
+          kubectl get pods -o wide || true
+          kubectl logs -l app=vaultcore --all-containers --tail=80 || true
+          kubectl get events --sort-by=.lastTimestamp || true
+      - name: Remove practice cluster
+        if: always()
+        run: kind delete cluster --name vaultcore
