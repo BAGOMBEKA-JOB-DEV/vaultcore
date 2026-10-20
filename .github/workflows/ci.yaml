@@ -28,7 +28,16 @@ jobs:
           MAVEN_OPTS: -Xmx512m -XX:MaxMetaspaceSize=384m
         run: ./mvnw --batch-mode -Pintegration verify
       - name: Build container image
-        run: docker build --tag vaultcore:ci .
+        run: docker build --tag vaultcore:ci --tag vaultcore:dev .
+      - name: Verify Docker Compose startup and API
+        run: |
+          printf 'DB_PASSWORD=%s\n' "$(openssl rand -hex 24)" > .env
+          chmod 600 .env
+          docker compose config --quiet
+          docker compose up --no-build --wait --wait-timeout 180
+          curl -fsS http://127.0.0.1:8080/actuator/health/readiness
+          python3 scripts/demo.py
+          docker compose down
       - name: Install verified Kubernetes CLIs
         shell: bash
         run: |
@@ -40,18 +49,23 @@ jobs:
           curl -fsSL https://dl.k8s.io/release/v1.37.1/bin/linux/amd64/kubectl.sha256 -o /tmp/kubectl.sha256
           printf '%s  /tmp/kubectl\n' "$(cat /tmp/kubectl.sha256)" | sha256sum -c
           sudo install -m 755 /tmp/kubectl /usr/local/bin/kubectl
-      - name: Exercise Kubernetes deployment and recovery
+      - name: Verify Kubernetes deployment and recovery
         run: |
-          docker tag vaultcore:ci vaultcore:dev
           kind create cluster --name vaultcore --config deploy/kind.yaml --wait 120s
           kind load docker-image vaultcore:dev --name vaultcore
           ./scripts/k8s-smoke.sh
       - name: Collect failure diagnostics
         if: failure()
         run: |
+          if [ -f .env ]; then docker compose logs --tail=80 || true; fi
           kubectl get pods -o wide || true
           kubectl logs -l app=vaultcore --all-containers --tail=80 || true
           kubectl get events --sort-by=.lastTimestamp || true
-      - name: Remove practice cluster
+      - name: Remove test resources
         if: always()
-        run: kind delete cluster --name vaultcore
+        run: |
+          kind delete cluster --name vaultcore || true
+          if [ -f .env ]; then
+            docker compose down --volumes
+            rm .env
+          fi

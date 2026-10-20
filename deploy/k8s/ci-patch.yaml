@@ -1,4 +1,4 @@
-# Private, disposable CI cluster only. Enables deliberately permissive demo authentication.
+# Private, disposable CI cluster only. Enables deliberately permissive development authentication.
 spec:
   replicas: 2
   strategy:

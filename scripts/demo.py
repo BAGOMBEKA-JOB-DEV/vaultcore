@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the dev API, including retries, concurrency, access control, and restart persistence."""
+"""Verify the development API, including retries, concurrency, access control, and restart persistence."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
@@ -12,7 +12,7 @@ import uuid
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base-url', default='http://127.0.0.1:8080')
-parser.add_argument('--state', type=Path, help='save demo state for a restart check; no tokens are saved')
+parser.add_argument('--state', type=Path, help='save API state for a restart check; no tokens are saved')
 parser.add_argument('--verify-state', type=Path, help='verify balances and replay after a restart')
 args = parser.parse_args()
 

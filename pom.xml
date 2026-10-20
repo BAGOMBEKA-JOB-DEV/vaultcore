@@ -13,7 +13,7 @@
     <artifactId>vaultcore</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>VaultCore</name>
-    <description>Banking transaction API practice project</description>
+    <description>Banking transaction API with an immutable ledger and durable idempotency</description>
     <properties>
         <java.version>21</java.version>
     </properties>

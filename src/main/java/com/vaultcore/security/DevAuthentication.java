@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Local practice only: deliberately allows choosing an identity and role. Never enable on a server. */
+/** Local development only: deliberately allows choosing an identity and role. Never enable on a public server. */
 @Configuration(proxyBeanMethods = false)
 @Profile("dev")
 public class DevAuthentication {
@@ -63,7 +63,7 @@ public class DevAuthentication {
     @Bean
     JwtEncoder developmentEncoder(KeyPair developmentKeys) {
         RSAKey key = new RSAKey.Builder((RSAPublicKey) developmentKeys.getPublic())
-                .privateKey(developmentKeys.getPrivate()).keyID("local-practice").build();
+                .privateKey(developmentKeys.getPrivate()).keyID("local-development").build();
         return new NimbusJwtEncoder(new ImmutableJWKSet<>(new JWKSet(key)));
     }
 

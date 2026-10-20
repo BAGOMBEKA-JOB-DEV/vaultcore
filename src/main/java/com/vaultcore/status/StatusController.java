@@ -10,7 +10,7 @@ public class StatusController {
 
     @GetMapping
     public StatusResponse status() {
-        return new StatusResponse("vaultcore", "practice-api");
+        return new StatusResponse("vaultcore", "banking-api");
     }
 
     public record StatusResponse(String service, String stage) {
