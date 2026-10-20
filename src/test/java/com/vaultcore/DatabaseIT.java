@@ -35,6 +35,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -54,7 +55,10 @@ class DatabaseIT {
             properties.add("spring.datasource.username", () -> System.getenv("VAULTCORE_TEST_DB_USER"));
             properties.add("spring.datasource.password", () -> System.getenv("VAULTCORE_TEST_DB_PASSWORD"));
         } else {
-            postgres = new PostgreSQLContainer("postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24")
+            postgres = new PostgreSQLContainer(DockerImageName.parse(
+                    "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24")
+                    .asCompatibleSubstituteFor("postgres"))
+                    .withCommand("postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=20")
                     .withCreateContainerCmdModifier(command -> command.getHostConfig().withMemory(192L * 1024 * 1024));
             postgres.start();
             properties.add("spring.datasource.url", postgres::getJdbcUrl);
