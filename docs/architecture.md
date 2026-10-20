@@ -58,14 +58,15 @@ calls for their annotated boundaries. Idempotency records have no expiry policy.
 
 Normal mode validates an external issuer's RSA/JWK-backed JWT, audience, and time
 claims. Customers create/read their own accounts and transfer from their own source
-accounts. TELLER/ADMIN perform simulated cash operations; privileged roles can read
+accounts. TELLER/ADMIN perform cash operations; privileged roles can read
 customer accounts/history. AUDITOR/ADMIN can reconcile. Ownership comes from token
 subject, not user-supplied account-owner fields. ADMIN can initiate transfers for
 other accounts. Public health probes expose no details.
 
-The explicit dev profile binds to loopback and supplies a deliberately permissive
-local token endpoint, avoiding another service on a 4 GB machine. Its generated
-RSA key is process-local unless a PKCS8 key file is supplied. The CI-only patch
+The explicit dev profile supplies a deliberately permissive local token endpoint.
+Host Java processes bind to loopback; containers listen on their internal interface
+with Docker publishing host ports only on loopback. Its generated RSA key is
+process-local unless a PKCS8 key file is supplied. The CI-only patch
 mounts a shared signing-key Secret so test tokens work across two replicas. This
 profile is absent in normal deployments. The README lists the complete API contract.
 
@@ -77,10 +78,15 @@ in normal mode. X-Request-ID is propagated to responses/log context; payloads,
 tokens, and SQL parameter values are not logged by application code.
 
 The native dev runner builds first if requested, starts one private PostgreSQL
-instance, runs the API, and stops both on exit while retaining practice data.
+instance, runs the API, and stops both on exit while retaining application data.
 The native test runner creates and removes an isolated database on a free port.
-Compose is an alternative PostgreSQL runtime with resource limits and loopback
-binding. They are never launched by setup or the default Maven verification.
+The multi-stage Dockerfile compiles source with JDK 21 and copies the application
+JAR into a non-root JRE image. Docker builds exclude local secrets and generated
+output. Compose runs the API and PostgreSQL on an internal network, waits for
+database health before API startup, publishes ports on loopback, and retains a
+named database volume. A readiness healthcheck reports API/database availability.
+Direct Docker and host Java commands provide alternatives to the helper scripts.
+Setup and default Maven verification do not launch application services.
 
 Kubernetes has a Deployment/Service, external ConfigMap/Secret values, bounded
 resources, non-root/read-only API containers, temporary storage, probes, and a
@@ -89,9 +95,9 @@ also checks the database. The one-replica default permits update downtime; CI
 uses two replicas with maxUnavailable=0/maxSurge=1. Neither supplies database HA.
 Migrations are additive and must remain compatible with overlapping app versions.
 
-## Failure exercises
+## Recovery verification
 
-On a disposable cluster with enough RAM, `scripts/k8s-smoke.sh` verifies money
+On a disposable cluster, `scripts/k8s-smoke.sh` verifies money
 operations and replay, restarts replicas, pauses/restores the database, deploys a
 missing image, inspects events, rolls back, and verifies persisted state again.
 It checks the kind-vaultcore context and uses private test authentication.

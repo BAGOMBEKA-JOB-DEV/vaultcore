@@ -40,7 +40,7 @@ class StatusControllerTest {
         mvc.perform(get("/api/v1/status").header("Authorization", "Bearer test-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.service").value("vaultcore"))
-                .andExpect(jsonPath("$.stage").value("practice-api"));
+                .andExpect(jsonPath("$.stage").value("banking-api"));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -55,7 +55,7 @@ class StatusControllerTest {
                 }
                 return Jwt.withTokenValue(token)
                         .header("alg", "RS256")
-                        .subject("practice-user")
+                        .subject("test-user")
                         .issuedAt(Instant.now())
                         .expiresAt(Instant.now().plusSeconds(60))
                         .build();

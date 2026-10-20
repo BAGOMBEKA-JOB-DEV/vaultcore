@@ -13,7 +13,7 @@ arguments = parser.parse_args()
 project = Path(__file__).resolve().parent.parent
 os.chdir(project)
 if not (project / '.env').exists():
-    raise SystemExit('Run ./scripts/setup.sh first.')
+    raise SystemExit('Create .env from .env.example and set DB_PASSWORD, or run ./scripts/setup.sh.')
 settings = dict(line.split('=', 1) for line in (project / '.env').read_text().splitlines()
                 if line and not line.startswith('#') and '=' in line)
 postgres_candidates = sorted(Path('/usr/lib/postgresql').glob('*/bin/initdb'))
@@ -67,7 +67,7 @@ try:
     if exists != '1':
         subprocess.run([str(postgres_bin / 'createdb'), '-h', str(data), '-p', str(port), '-U', username, database],
                        check=True, env=environment)
-    print(f"Local practice API: http://127.0.0.1:{environment.get('SERVER_PORT', '8080')}. "
+    print(f"Local development API: http://127.0.0.1:{environment.get('SERVER_PORT', '8080')}. "
           'Ctrl+C stops the API and its private database.', flush=True)
     subprocess.run([str(project / 'scripts/run.sh'), '--spring.profiles.active=dev'], check=True, env=environment)
 except KeyboardInterrupt:
